@@ -67,3 +67,5 @@ jobs:
           git add helm/petclinic/values.yaml
           git commit -m "CI: update imageTag to ${IMAGE_TAG}" || echo "No changes to commit"
           git push
+
+          #added
