@@ -1,27 +1,33 @@
 name: Build and Push to ECR
 
-# This workflow runs on every push to the main branch
 on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: write
+
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest    # GitHub provides a fresh Ubuntu VM for each run
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
     steps:
-      # Step 1: Download your repo code onto the GitHub runner
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-      # Step 2: Set up Java 17 on the runner
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # Step 3: Cache Maven dependencies to speed up future builds
       - name: Cache Maven dependencies
         uses: actions/cache@v4
         with:
@@ -29,25 +35,20 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
 
-      # Step 4: Log in to Amazon ECR using the secrets you stored above
       - name: Log in to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
+        with:
+          region: ${{ secrets.AWS_REGION }}
 
-      # Step 5: Build the JAR files and Docker images
       - name: Build application and Docker images
         run: ./mvnw clean install -P buildDocker -DskipTests
         env:
           DOCKER_BUILDKIT: 1
 
-      # Step 6: Tag images with the git commit SHA (unique per commit) and push
       - name: Tag and push images to ECR
         env:
           ECR_BASE: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-          IMAGE_TAG: ${{ github.sha }}   # github.sha is the unique commit hash
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           for SERVICE in config-server discovery-server api-gateway customers-service visits-service vets-service admin-server genai-service; do
             docker tag springcommunity/spring-petclinic-${SERVICE}:latest \
@@ -56,7 +57,6 @@ jobs:
             echo "Pushed ${SERVICE}:${IMAGE_TAG}"
           done
 
-      # Step 7: Update the imageTag in values.yaml so ArgoCD can pick up the new version
       - name: Update image tag in Helm values
         env:
           IMAGE_TAG: ${{ github.sha }}
@@ -64,8 +64,7 @@ jobs:
           sed -i "s/imageTag:.*/imageTag: \"${IMAGE_TAG}\"/" helm/petclinic/values.yaml
           git config user.email "github-actions@github.com"
           git config user.name "GitHub Actions"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git add helm/petclinic/values.yaml
           git commit -m "CI: update imageTag to ${IMAGE_TAG}" || echo "No changes to commit"
-          git push
-
-          #added
+          git push origin HEAD:main
