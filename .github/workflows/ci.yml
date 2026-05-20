@@ -67,3 +67,13 @@ jobs:
           git add helm/petclinic/values.yaml
           git commit -m "CI: update imageTag to ${IMAGE_TAG}" || echo "No changes to commit"
           git push
+- name: Update OpenAI secret in Kubernetes
+  run: |
+    aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name petclinic-cluster
+    kubectl create secret generic openai-secret \
+      --from-literal=api-key="${{ secrets.OPENAI_API_KEY }}" \
+      --namespace petclinic \
+      --dry-run=client -o yaml | kubectl apply -f -
+  env:
+    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
