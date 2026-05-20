@@ -1,0 +1,40 @@
+# Replace with your actual ECR base URL
+imageRegistry: "YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com"
+imageTag: "1.0.0"
+
+# OpenAI key for the chatbot — override this with a Kubernetes Secret in production
+openaiApiKey: ""
+
+services:
+  configServer:
+    name: config-server
+    port: 8888
+    memory: "512Mi"
+  discoveryServer:
+    name: discovery-server
+    port: 8761
+    memory: "512Mi"
+  apiGateway:
+    name: api-gateway
+    port: 8080
+    memory: "512Mi"
+  customersService:
+    name: customers-service
+    port: 8081
+    memory: "512Mi"
+  visitsService:
+    name: visits-service
+    port: 8082
+    memory: "512Mi"
+  vetsService:
+    name: vets-service
+    port: 8083
+    memory: "512Mi"
+  genaiService:
+    name: genai-service
+    port: 8084
+    memory: "512Mi"
+  adminServer:
+    name: admin-server
+    port: 9090
+    memory: "512Mi"
