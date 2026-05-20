@@ -5,6 +5,11 @@ target/
 # Jenv
 .java-version
 
+#terraform
+terraform/.terraform/
+terraform/*.tfstate*
+ansible/*.retry
+
 # Eclipse
 .settings/
 .classpath
