@@ -1,5 +1,5 @@
 # Replace with your actual ECR base URL
-imageRegistry: "YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com"
+imageRegistry: "268015775379.dkr.ecr.us-east-1.amazonaws.com"
 imageTag: "1.0.0"
 
 # OpenAI key for the chatbot — override this with a Kubernetes Secret in production
